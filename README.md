@@ -228,6 +228,13 @@ make docker-build IMG=…
 make build-installer # dist/install.yaml
 ```
 
+Load and autoscaling checks against a real cluster:
+
+```bash
+hack/load.sh paper.pdf 2000 50 http://localhost:8080     # N requests, P workers, status/latency summary
+hack/scale-test.sh docling paper.pdf 2000 32             # HPA mode, in-cluster load Job, waits for scale-up/down
+```
+
 The envtest suite covers: models not ready → ready → version switch with
 cleanup, download failure, bundled models, CUDA and DirectML pod specs,
 crash-loop recovery with exhausted attempts, KEDA without the CRD, deletion
