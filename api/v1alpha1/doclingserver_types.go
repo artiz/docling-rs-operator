@@ -335,9 +335,11 @@ type ServiceSpec struct {
 	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
 	// +optional
 	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicy `json:"externalTrafficPolicy,omitempty"`
-	// SessionAffinity is useful for async jobs (/v1/convert/async + /v1/result)
-	// which are kept in memory of the replica that accepted them.
-	// +kubebuilder:default=ClientIP
+	// SessionAffinity defaults to None so load from a single client address
+	// spreads across replicas. Set ClientIP when clients use the async flow
+	// (/v1/convert/async + /v1/result), whose results live in the memory of
+	// the replica that accepted the job.
+	// +kubebuilder:default=None
 	// +optional
 	SessionAffinity corev1.ServiceAffinity `json:"sessionAffinity,omitempty"`
 }

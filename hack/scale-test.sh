@@ -48,9 +48,12 @@ kubectl patch dsrv "$NAME" -n "$NS" --type merge -p "$(cat <<EOF
 }}
 EOF
 )"
-echo "waiting for Ready..."
+echo "waiting for the rollout (new resources) and Ready..."
+sleep 5
+kubectl rollout status deploy/"$NAME" -n "$NS" --timeout=10m
 kubectl wait dsrv "$NAME" -n "$NS" --for=condition=Ready --timeout=10m
 kubectl get hpa "$NAME" -n "$NS"
+BASE=$(kubectl get deploy "$NAME" -n "$NS" -o jsonpath='{.spec.replicas}')
 
 say "2. load Job: $TOTAL requests, $PAR workers, from inside the cluster"
 kubectl delete job "$JOB" -n "$NS" --ignore-not-found --wait=true >/dev/null
@@ -114,12 +117,14 @@ T0=$(date +%s)
 while :; do
   NOW=$(( $(date +%s) - T0 ))
   READY=$(kubectl get dsrv "$NAME" -n "$NS" -o jsonpath='{.status.readyReplicas}')
+  DESIRED=$(kubectl get hpa "$NAME" -n "$NS" -o jsonpath='{.status.desiredReplicas}' 2>/dev/null || true)
   HPA=$(kubectl get hpa "$NAME" -n "$NS" -o jsonpath='{.status.currentMetrics[0].resource.current.averageUtilization}%/{.spec.metrics[0].resource.target.averageUtilization}% desired={.status.desiredReplicas}' 2>/dev/null || true)
   JOBST=$(kubectl get job "$JOB" -n "$NS" -o jsonpath='{.status.succeeded}{.status.failed}' 2>/dev/null)
   echo "t+${NOW}s  readyReplicas=${READY:-0}  hpa: ${HPA}  job: ${JOBST:-running}"
   kubectl top pods -n "$NS" -l "docling.artiz.dev/server=$NAME" --no-headers 2>/dev/null | sed 's/^/    /'
-  if [ -z "$PASS" ] && [ "${READY:-0}" -ge 2 ]; then
-    PASS=1; echo "✅ scaled up to ${READY} replicas after ${NOW}s"
+  # Pass only on an HPA decision, not on a rollout surge.
+  if [ -z "$PASS" ] && [ "${DESIRED:-0}" -gt "${BASE:-1}" ] && [ "${READY:-0}" -ge "${DESIRED:-0}" ]; then
+    PASS=1; echo "✅ HPA scaled ${BASE:-1} -> ${READY} replicas after ${NOW}s"
   fi
   if [ -n "$JOBST" ]; then
     echo; echo "load Job finished:"; kubectl logs "job/$JOB" -n "$NS" | tail -8

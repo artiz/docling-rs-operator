@@ -262,7 +262,7 @@ func buildService(ds *doclingv1alpha1.DoclingServer, r *resolved) *corev1.Servic
 	}
 	affinity := s.SessionAffinity
 	if affinity == "" {
-		affinity = corev1.ServiceAffinityClientIP
+		affinity = corev1.ServiceAffinityNone
 	}
 	svc.Spec.SessionAffinity = affinity
 	return svc

@@ -131,7 +131,7 @@ spec:
     port: 80
     annotations: {}
     loadBalancerSourceRanges: []
-    sessionAffinity: ClientIP                 # async jobs live in one replica's memory
+    sessionAffinity: None                     # ClientIP if clients use /v1/convert/async
   scaling:
     mode: hpa | keda | none
     minReplicas: 1
@@ -217,6 +217,11 @@ default (override with `scaling.behavior`).
 * **PodSecurity `restricted`** – the downloader runs as root by default so the
   PVC root is writable on any backend; set
   `models.downloader.podSecurityContext` (`runAsUser`, `fsGroup`) otherwise.
+* **Async jobs** – `/v1/convert/async` results live in the memory of the
+  replica that accepted the job. With more than one replica set
+  `service.sessionAffinity: ClientIP`, or stick to the synchronous
+  `/v1/convert`. The default is `None` so a single client address is spread
+  across replicas.
 * **Pause** – `spec.paused: true` stops reconciliation without deleting anything.
 
 ## Development

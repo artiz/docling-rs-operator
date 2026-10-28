@@ -213,6 +213,7 @@ var _ = Describe("DoclingServer controller", func() {
 			Expect(svc.Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
 			Expect(svc.Spec.Ports[0].Port).To(Equal(int32(80)))
 			Expect(svc.Spec.Selector).To(Equal(selectorLabels(ds)))
+			Expect(svc.Spec.SessionAffinity).To(Equal(corev1.ServiceAffinityNone))
 
 			hpa := &autoscalingv2.HorizontalPodAutoscaler{}
 			Eventually(func() error { return k8sClient.Get(ctx, key, hpa) }, timeout, interval).Should(Succeed())
