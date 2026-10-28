@@ -1,0 +1,19 @@
+# Minimal CPU server: models from the models-v1 release on a 20Gi RWX PVC,
+# generated API key, LoadBalancer on port 80, HPA 1-5 replicas on CPU.
+apiVersion: docling.artiz.dev/v1alpha1
+kind: DoclingServer
+metadata:
+  name: docling
+spec:
+  models:
+    storage:
+      storageClassName: nfs-csi        # any ReadWriteMany class
+  server:
+    concurrency: 2
+    resources:
+      requests: {cpu: "1", memory: 2Gi}
+      limits: {cpu: "4", memory: 4Gi}
+  scaling:
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilization: 70
