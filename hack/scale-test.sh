@@ -36,6 +36,13 @@ kubectl top pods -n "$NS" >/dev/null 2>&1 || {
 SIZE=$(wc -c <"$FILE" | tr -d ' ')
 [ "$SIZE" -le 1000000 ] || { echo "$FILE is $SIZE bytes; ConfigMaps hold <= 1 MiB, use a smaller PDF" >&2; exit 1; }
 kubectl get dsrv "$NAME" -n "$NS" >/dev/null
+AFF=$(kubectl get svc "$NAME" -n "$NS" -o jsonpath='{.spec.sessionAffinity}' 2>/dev/null || true)
+if [ "$AFF" = "ClientIP" ]; then
+  echo "Service $NAME has sessionAffinity=ClientIP: the load Job is ONE client address and will be" >&2
+  echo "pinned to ONE replica, so no scale test is meaningful. Set spec.service.sessionAffinity: None" >&2
+  echo "(the operator default since the sessionAffinity change; restart 'make run' after git pull)." >&2
+  exit 1
+fi
 
 say "1. HPA mode: 1..$MAX replicas, CPU target 50% of 500m"
 kubectl patch dsrv "$NAME" -n "$NS" --type merge -p "$(cat <<EOF
