@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # End-to-end autoscaling check for a DoclingServer.
 #
-#   hack/scale-test.sh <doclingserver> <file.pdf> [total=2000] [parallel=32] [maxReplicas=4]
+#   hack/scale-test.sh <doclingserver> <file.pdf> [total=800] [parallel=32] [maxReplicas=4]
 #
 # 1. switches the server to HPA mode on CPU (50 % of a 500m request, so one
 #    replica saturates fast) and waits for Ready
@@ -15,7 +15,7 @@ set -euo pipefail
 
 NAME=${1:?usage: $0 <doclingserver> <file.pdf> [total] [parallel] [maxReplicas]}
 FILE=${2:?usage: $0 <doclingserver> <file.pdf> [total] [parallel] [maxReplicas]}
-TOTAL=${3:-2000}
+TOTAL=${3:-800}
 PAR=${4:-32}
 MAX=${5:-4}
 NS=${NAMESPACE:-$(kubectl config view --minify -o jsonpath='{..namespace}')}
@@ -137,12 +137,18 @@ while :; do
     echo; echo "load Job finished:"; kubectl logs "job/$JOB" -n "$NS" | tail -8
     break
   fi
-  [ "$NOW" -lt 900 ] || { echo "⏱ 15 min without scale-up; check 'kubectl describe hpa $NAME'"; break; }
+  if [ -z "$PASS" ] && [ "$NOW" -ge 900 ]; then
+    echo "⏱ 15 min without scale-up; check 'kubectl describe hpa $NAME'"; break
+  fi
+  if [ -n "$PASS" ] && [ "$NOW" -ge 2400 ]; then
+    echo "⏱ load Job still running after 40 min; stopping the watch (kubectl logs job/$JOB for results)"; break
+  fi
   sleep 15
 done
 
 if [ -n "$PASS" ]; then
-  say "4. waiting for scale-down to 1 (stabilization 60s + HPA sync)"
+  say "4. waiting for the load to end, then scale-down to 1 (stabilization 60s + HPA sync)"
+  kubectl wait job "$JOB" -n "$NS" --for=condition=Complete --timeout=40m >/dev/null 2>&1 || true
   T1=$(date +%s)
   while :; do
     READY=$(kubectl get dsrv "$NAME" -n "$NS" -o jsonpath='{.status.readyReplicas}')

@@ -237,7 +237,7 @@ Load and autoscaling checks against a real cluster:
 
 ```bash
 hack/load.sh paper.pdf 2000 50 http://localhost:8080     # N requests, P workers, status/latency summary
-hack/scale-test.sh docling paper.pdf 2000 32             # HPA mode, in-cluster load Job, waits for scale-up/down
+hack/scale-test.sh docling paper.pdf 800 32              # HPA mode, in-cluster load Job, waits for scale-up/down
 ```
 
 The envtest suite covers: models not ready → ready → version switch with
