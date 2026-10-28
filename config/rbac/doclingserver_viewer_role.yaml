@@ -1,0 +1,23 @@
+# permissions for end users to view doclingservers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: docling-rs-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: doclingserver-viewer-role
+rules:
+- apiGroups:
+  - docling.artiz.dev
+  resources:
+  - doclingservers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - docling.artiz.dev
+  resources:
+  - doclingservers/status
+  verbs:
+  - get

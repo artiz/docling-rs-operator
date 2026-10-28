@@ -1,0 +1,5 @@
+/*
+Copyright (c) 2026 Artem Kustikov
+
+SPDX-License-Identifier: MIT
+*/

@@ -1,0 +1,24 @@
+# DirectML on Windows nodes. Upstream ships no Windows image: build
+# docling-serve with `--features directml` into your own image. The operator
+# pins pods to kubernetes.io/os=windows, requests microsoft.com/directx (the
+# Windows GPU device plugin) and mounts the models at C:\models.
+apiVersion: docling.artiz.dev/v1alpha1
+kind: DoclingServer
+metadata:
+  name: docling-dml
+spec:
+  accelerator:
+    type: directml
+  image:
+    repository: myregistry.example.com/docling-rs-serve-directml
+    tag: "1.28.0"
+  models:
+    storage:
+      storageClassName: azurefile-csi   # SMB-backed RWX reachable from Windows
+      size: 30Gi
+    downloader:
+      nodeSelector:
+        kubernetes.io/os: linux         # download runs on Linux
+  scaling:
+    minReplicas: 1
+    maxReplicas: 3

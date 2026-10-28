@@ -1,0 +1,40 @@
+# NVIDIA GPU server: ghcr.io/docling-project/docling-rs-serve-cuda, one GPU per
+# replica, in-flight requests as the scaling signal (prometheus-adapter must
+# expose docling_serve_requests_in_flight as a pods metric).
+apiVersion: docling.artiz.dev/v1alpha1
+kind: DoclingServer
+metadata:
+  name: docling-gpu
+spec:
+  accelerator:
+    type: cuda
+    count: 1
+    runtimeClassName: nvidia
+  image:
+    tag: "1"
+  models:
+    version: models-v1
+    options:
+      enrich: true          # CodeFormulaV2, ~1.3 GB
+    storage:
+      storageClassName: nfs-csi
+      size: 40Gi
+  server:
+    concurrency: 4
+    resources:
+      requests: {cpu: "2", memory: 6Gi}
+      limits: {cpu: "8", memory: 12Gi}
+  auth:
+    secretRef:
+      name: docling-gpu-key   # key "api-key"
+  service:
+    type: LoadBalancer
+    port: 80
+    loadBalancerSourceRanges: ["10.0.0.0/8"]
+  scaling:
+    mode: hpa
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilization: 0
+    targetInFlightPerReplica: 4
+    minAvailable: 1

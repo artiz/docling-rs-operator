@@ -1,0 +1,13 @@
+# prometheus-adapter rule exposing docling_serve_requests_in_flight as a pods
+# metric so a plain HPA (spec.scaling.mode=hpa, targetInFlightPerReplica) can
+# use it. Merge into the adapter's config ConfigMap.
+rules:
+  custom:
+  - seriesQuery: 'docling_serve_requests_in_flight{namespace!="",pod!=""}'
+    resources:
+      overrides:
+        namespace: {resource: "namespace"}
+        pod: {resource: "pod"}
+    name:
+      as: "docling_serve_requests_in_flight"
+    metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'

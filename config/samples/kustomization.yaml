@@ -1,0 +1,6 @@
+## Append samples of your project ##
+resources:
+- docling_v1alpha1_doclingserver.yaml
+- docling_v1alpha1_doclingserver_cuda.yaml
+- docling_v1alpha1_doclingserver_directml.yaml
+- docling_v1alpha1_doclingserver_keda.yaml
